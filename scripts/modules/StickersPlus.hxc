@@ -139,7 +139,7 @@ class StickersPlus extends Module
     	{
     		stickerList[i] = StringTools.replace(stickerList[i], "assets/shared/images/", "");
     		stickerList[i] = StringTools.replace(stickerList[i], ".png", "");
-    		if (StringTools.contains(stickerList[i], 'stickersPlusLogo' && savedOptions.watermark != true)) stickerList.remove(stickerList[i]);
+    		if (StringTools.contains(stickerList[i], 'stickersPlusLogo') && savedOptions.watermark == false) stickerList.remove(stickerList[i]);
     	}
 
     	if (stickerList.length > baseGameStickers.length && savedOptions.baseGame != true)
