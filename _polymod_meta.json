@@ -1,0 +1,14 @@
+{
+	"title": "Stickers Plus",
+	"description": "An extension to Base Funkin's sticker transitions",
+	"homepage": "https://gamebanana.com/mods/518089",
+	"contributors": [
+		{
+			"name": "ItIsIWeeg",
+			"role": "Everything"
+		}
+	],
+	"api_version": "0.5.1",
+	"mod_version": "1.0.1",
+	"license": "Apache 2.0"
+}

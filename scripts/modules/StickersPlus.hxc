@@ -1,0 +1,232 @@
+import funkin.modding.module.Module;
+import funkin.ui.transition.StickerSubState;
+import funkin.audio.FunkinSound;
+import funkin.Paths;
+import Type;
+
+import openfl.utils.Assets;
+import flixel.group.FlxTypedGroup;
+
+import flixel.FlxG;
+import StringTools;
+
+import funkin.play.PlayState;
+import funkin.Paths;
+
+import funkin.save.Save;
+import flixel.FlxG;
+
+import funkin.ui.options.OptionsState;
+import funkin.ui.options.PreferencesMenu;
+
+class StickersPlus extends Module
+{
+	var stickerState:StickerSubState = null;
+	static var currentOpponent:String = 'bf';
+	static var stickerData:Array<Array<String>> = [];
+	static var baseGameStickers:Array<String> = [
+		'bfSticker1',
+		'bfSticker2',
+		'bfSticker3',
+		'dadSticker1',
+		'dadSticker2',
+		'dadSticker3',
+		'gfSticker1',
+		'gfSticker2',
+		'gfSticker3',
+		'momSticker1',
+		'momSticker2',
+		'momSticker3',
+		'monsterSticker1',
+		'monsterSticker2',
+		'monsterSticker3',
+		'picoSticker1',
+		'picoSticker2',
+		'picoSticker3'
+	];
+
+	static var savedOptions = {
+		enabled: true,
+		middleStick: true,
+		watermark: false,
+		baseGame: true
+	};
+
+	function onStateChangeBegin(event)
+	{
+		super.onStateChangeBegin(event);
+		saveSetUp(savedOptions);
+		bindData();
+	}
+
+	function saveSetUp(saveFile:Dynamic):Void
+	{
+		if (Save.instance.modOptions.get("StickersPlus") == null)
+		{
+			Save.instance.modOptions.set("StickersPlus", savedOptions);
+			Save.instance.flush();
+		}
+		else
+		{
+			savedOptions = Save.instance.modOptions.get("StickersPlus");
+		}
+	}
+
+	function bindData():Void
+	{
+		Save.instance.modOptions.set("StickersPlus", savedOptions);
+		Save.instance.flush();
+	}
+
+	function new() {
+		super('StickersPlus', 11037); // loads last, to be able to pick up more sticker packs.
+	}
+
+	function initialize()
+	{
+		stickerData = [];
+		var fullText:String = Assets.getText(Paths.txt('stickersPlusData'));
+
+		var firstArray:Array<String> = fullText.split('\n').filter(function(s:String) return s != '');
+		for (i in firstArray)
+    	{
+      		stickerData.push([i.split(':')[0], i.split(':')[1]]);
+      		trace("[STICKERS PLUS] Added new exception: " + i.split(':')[0] + " => " + i.split(':')[1]);
+    	}
+	}
+
+	function onSongLoaded(event)
+	{
+		super.onSongLoaded(event);
+		initialize();
+		if (PlayState.instance != null) currentOpponent = PlayState.instance.currentStage.getDad().characterId;
+		trace("[STICKERS PLUS] Loaded opponent ID " + currentOpponent);
+		for (data in stickerData)
+		{
+			if (data[0] == currentOpponent)
+			{
+				currentOpponent = StringTools.replace(data[1], "\n", "");
+				currentOpponent = StringTools.replace(currentOpponent, "\r", "");
+				
+				trace("[STICKERS PLUS] Changed opponent ID to " + currentOpponent + "!");
+			}
+		}
+	}
+
+	override function onSubStateOpenBegin(event)
+	{
+		super.onSubStateOpenBegin(event);
+		if (savedOptions.enabled == false) return;
+		if (Std.isOfType(event.targetState, StickerSubState))
+		{
+			this.stickerState = event.targetState;
+			if (!this.stickerState.grpStickers.members[0].visible)
+			{
+				replaceStickers(this.stickerState.grpStickers);
+			}
+		}
+	}
+
+	function replaceStickers(stickerGroup:FlxTypedGroup):Void
+	{
+		var assetsInList = Assets.list();
+		var stickerFilter = function(a:String) {
+    		return (StringTools.startsWith(a, 'assets/shared/images/transitionSwag/') && StringTools.endsWith(a, '.png'));
+    	};
+
+    	var stickerList = assetsInList.filter(stickerFilter);
+    	for (i in 0...stickerList.length)
+    	{
+    		stickerList[i] = StringTools.replace(stickerList[i], "assets/shared/images/", "");
+    		stickerList[i] = StringTools.replace(stickerList[i], ".png", "");
+    		if (StringTools.contains(stickerList[i], 'stickersPlusLogo' && savedOptions.watermark != true)) stickerList.remove(stickerList[i]);
+    	}
+
+    	if (stickerList.length > baseGameStickers.length && savedOptions.baseGame != true)
+    	{
+    		for (i in 0...baseGameStickers.length)
+    		{
+    			for (j in 0...stickerList.length)
+    			{
+    				if (StringTools.contains(stickerList[j], baseGameStickers[i])) stickerList.remove(stickerList[j]);
+    			}
+    		}
+    	}
+
+    	trace("[STICKERS PLUS] Sticker list: " + stickerList);
+
+    	for (sticker in stickerGroup.members)
+    	{
+    		sticker.loadGraphic(Paths.image(stickerList[FlxG.random.int(0, stickerList.length - 1)]));
+    	}
+
+    	if (currentOpponent != null && savedOptions.middleStick == true)
+    	{
+    		trace("[STICKERS PLUS] Attempting to get sticker for: " + currentOpponent);
+    		trace("[STICKERS PLUS] Example Name: transitionSwag/" + currentOpponent + ".png");
+    		var charStickers:Array<String> = [];
+    		for (i in 0...stickerList.length)
+    		{
+    			if (StringTools.contains(stickerList[i], currentOpponent)) charStickers.push(stickerList[i]);
+    		}
+    		trace("[STICKERS PLUS] Matching stickers found: " + charStickers);
+
+    		if (charStickers.length > 0) stickerGroup.members[stickerGroup.members.length - 1].loadGraphic(Paths.image(charStickers[FlxG.random.int(0, charStickers.length - 1)]));
+    	}
+
+    	stickerGroup.members[stickerGroup.members.length - 1].screenCenter();
+	}
+
+	function onStateChangeEnd(event):Void
+	{
+		super.onStateChangeEnd(event);
+		if (!Std.isOfType(event.targetState, OptionsState))
+			return;
+		var state = event.targetState;
+		var preferences = event.targetState.pages['preferences'];
+		var options = event.targetState.pages.get('options');
+		var exit = options.items.members[options.items.length - 1];
+    	exit.y += 100;
+    	options.items.remove(exit);
+
+    	var item = options.items.createItem(0, exit.y - 100, "Stickers Plus Options", "bold", function(){
+        options.onSwitch.dispatch('stickers');
+    	});
+    	item.x = (FlxG.width - item.width) / 2;
+    	options.items.add(exit);
+
+    	var stickerOptions = event.targetState.addPage('stickers', new PreferencesMenu());
+    	stickerOptions.onExit.add(function(){
+        	state.switchPage('options');
+    	});
+    	for(shit in stickerOptions.items){
+        	shit.destroy();
+      	}
+      	for(shit in stickerOptions.preferenceItems){
+    	    shit.destroy();
+      	}
+
+      	stickerOptions.items.clear();
+      	stickerOptions.preferenceItems.clear();
+
+      	stickerOptions.createPrefItemCheckbox('Stickers Plus', 'Enables Stickers Plus', (value) -> {
+			savedOptions.enabled = value;
+			bindData();
+		}, savedOptions.enabled);
+
+		stickerOptions.createPrefItemCheckbox('Highlight Opponent', 'When enabled, forces the middle sticker to be the opponent (when applicable).', (value) -> {
+			savedOptions.middleStick = value;
+			bindData();
+		}, savedOptions.middleStick);
+
+		stickerOptions.createPrefItemCheckbox('Watermark Sticker', 'Adds the Stickers+ logo to the sticker pool.', (value) -> {
+			savedOptions.watermark = value;
+			bindData();
+		}, savedOptions.watermark);
+
+		stickerOptions.createPrefItemCheckbox('Base Game Stickers', 'Turns off the base game stickers.', (value) -> {
+			savedOptions.baseGame = value;
+			bindData();
+		}, savedOptions.baseGame);
+	}
+}
