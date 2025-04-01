@@ -42,7 +42,27 @@ class StickersPlus extends Module
 		'monsterSticker3',
 		'picoSticker1',
 		'picoSticker2',
-		'picoSticker3'
+		'picoSticker3',
+		'darnellSticker1',
+		'darnellSticker2',
+		'darnellSticker3',
+		'neneSticker1',
+		'neneSticker2',
+		'neneSticker3',
+		'cassandraSticker1',
+		'cassandraSticker2',
+		'cassandraSticker3',
+		'alucardSticker1',
+		'alucardSticker2',
+		'someDeadGuySticker1',
+		'someDeadGuySticker2',
+		'cyclopsSticker1',
+		'cyclopsSticker2',
+		'miscSticker1',
+		'miscSticker2',
+		'miscSticker3',
+		'miscSticker4',
+		'miscSticker5'
 	];
 
 	static var savedOptions = {
@@ -138,9 +158,13 @@ class StickersPlus extends Module
     	for (i in 0...stickerList.length)
     	{
     		stickerList[i] = StringTools.replace(stickerList[i], "assets/shared/images/", "");
-    		stickerList[i] = StringTools.replace(stickerList[i], ".png", "");
+    		stickerList[i] = stickerList[i].split(".")[0];
     		if (StringTools.contains(stickerList[i], 'stickersPlusLogo') && savedOptions.watermark == false) stickerList.remove(stickerList[i]);
     	}
+
+    	// for some reason the first sticker in a set doesn't have it's asset key fixed, so this fixes that.
+    	stickerList[0] = StringTools.replace(stickerList[0], "assets/shared/images/", "");
+    	stickerList[0] = stickerList[0].split(".")[0];
 
     	if (stickerList.length > baseGameStickers.length && savedOptions.baseGame != true)
     	{
@@ -163,7 +187,7 @@ class StickersPlus extends Module
     	if (currentOpponent != null && savedOptions.middleStick == true)
     	{
     		trace("[STICKERS PLUS] Attempting to get sticker for: " + currentOpponent);
-    		trace("[STICKERS PLUS] Example Name: transitionSwag/" + currentOpponent + ".png");
+    		trace("[STICKERS PLUS] Example Name: transitionSwag/" + currentOpponent + "Sticker.png");
     		var charStickers:Array<String> = [];
     		for (i in 0...stickerList.length)
     		{
@@ -182,9 +206,9 @@ class StickersPlus extends Module
 		super.onStateChangeEnd(event);
 		if (!Std.isOfType(event.targetState, OptionsState))
 			return;
-		var state = event.targetState;
-		var preferences = event.targetState.pages['preferences'];
-		var options = event.targetState.pages.get('options');
+		var state = event.targetState.optionsCodex;
+		var preferences = event.targetState.optionsCodex.pages['preferences'];
+		var options = event.targetState.optionsCodex.pages.get('options');
 		var exit = options.items.members[options.items.length - 1];
     	exit.y += 100;
     	options.items.remove(exit);
@@ -195,7 +219,9 @@ class StickersPlus extends Module
     	item.x = (FlxG.width - item.width) / 2;
     	options.items.add(exit);
 
-    	var stickerOptions = event.targetState.addPage('stickers', new PreferencesMenu());
+    	recenterItems(options);
+
+    	var stickerOptions = event.targetState.optionsCodex.addPage('stickers', new PreferencesMenu());
     	stickerOptions.onExit.add(function(){
         	state.switchPage('options');
     	});
@@ -228,5 +254,16 @@ class StickersPlus extends Module
 			savedOptions.baseGame = value;
 			bindData();
 		}, savedOptions.baseGame);
+	}
+
+	function recenterItems(options)
+	{
+		var offset = FlxG.height / 2;
+		offset -= 50 * options.items.members.length;
+
+		for (i in 0...options.items.members.length)
+		{
+			options.items.members[i].y = offset + 100 * i;
+		}
 	}
 }
