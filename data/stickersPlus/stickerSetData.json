@@ -1,0 +1,52 @@
+{
+	"packs": [
+		{
+			"name": "Set One",
+			"stickerPaths": [
+				"set-1/bfSticker", 
+				"set-1/gfSticker", 
+				"set-1/dadSticker", 
+				"set-1/picoSticker", 
+				"set-1/momSticker", 
+				"set-1/monsterSticker"
+			]
+		},
+		{
+			"name": "BF & GF",
+			"stickerPaths": [
+				"set-1/bfSticker", 
+				"set-1/gfSticker"
+			]
+		},
+		{
+			"name": "Set Two",
+			"stickerPaths": [
+				"set-2/picoSticker", 
+				"set-2/darnellSticker", 
+				"set-2/neneSticker", 
+				"set-2/cassandraSticker", 
+				"set-2/alucardSticker", 
+				"set-2/someDeadGuySticker", 
+				"set-2/cyclopsSticker", 
+				"set-2/dadSticker", 
+				"set-2/miscSticker"
+			]
+		},
+		{
+			"name": "Weekend",
+			"stickerPaths": [
+				"set-2/picoSticker", 
+				"set-2/darnellSticker", 
+				"set-2/neneSticker", 
+				"set-2/miscSticker"
+			]
+		},
+		{
+			"name": "Pico & Nene",
+			"stickerPaths": [
+				"set-2/picoSticker", 
+				"set-2/neneSticker"
+			]
+		}
+	]
+}

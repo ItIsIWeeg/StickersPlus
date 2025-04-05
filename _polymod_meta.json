@@ -6,9 +6,13 @@
 		{
 			"name": "ItIsIWeeg",
 			"role": "Everything"
+		},
+		{
+			"name": "DaWaterMelone",
+			"role": "Provided a fix before 0.6.2's source code dropped."
 		}
 	],
-	"api_version": "0.5.1",
-	"mod_version": "1.0.1",
+	"api_version": "0.5.0",
+	"mod_version": "2.0.0",
 	"license": "Apache 2.0"
 }

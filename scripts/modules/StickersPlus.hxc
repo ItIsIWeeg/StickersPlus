@@ -1,76 +1,38 @@
-import funkin.modding.module.Module;
-import funkin.ui.transition.StickerSubState;
-import funkin.audio.FunkinSound;
-import funkin.Paths;
-import Type;
-
-import openfl.utils.Assets;
+import flixel.FlxG;
 import flixel.group.FlxTypedGroup;
 
-import flixel.FlxG;
-import StringTools;
-
-import funkin.play.PlayState;
 import funkin.Paths;
-
+import funkin.audio.FunkinSound;
+import funkin.modding.module.Module;
+import funkin.play.PlayState;
 import funkin.save.Save;
-import flixel.FlxG;
-
 import funkin.ui.options.OptionsState;
 import funkin.ui.options.PreferencesMenu;
+import funkin.ui.options.items.NumberPreferenceItem;
+import funkin.ui.transition.StickerSubState;
+
+import haxe.Json;
+import lime.utils.Assets;
+
+import StringTools;
 
 class StickersPlus extends Module
 {
 	var stickerState:StickerSubState = null;
 	static var currentOpponent:String = 'bf';
 	static var stickerData:Array<Array<String>> = [];
-	static var baseGameStickers:Array<String> = [
-		'bfSticker1',
-		'bfSticker2',
-		'bfSticker3',
-		'dadSticker1',
-		'dadSticker2',
-		'dadSticker3',
-		'gfSticker1',
-		'gfSticker2',
-		'gfSticker3',
-		'momSticker1',
-		'momSticker2',
-		'momSticker3',
-		'monsterSticker1',
-		'monsterSticker2',
-		'monsterSticker3',
-		'picoSticker1',
-		'picoSticker2',
-		'picoSticker3',
-		'darnellSticker1',
-		'darnellSticker2',
-		'darnellSticker3',
-		'neneSticker1',
-		'neneSticker2',
-		'neneSticker3',
-		'cassandraSticker1',
-		'cassandraSticker2',
-		'cassandraSticker3',
-		'alucardSticker1',
-		'alucardSticker2',
-		'someDeadGuySticker1',
-		'someDeadGuySticker2',
-		'cyclopsSticker1',
-		'cyclopsSticker2',
-		'miscSticker1',
-		'miscSticker2',
-		'miscSticker3',
-		'miscSticker4',
-		'miscSticker5'
-	];
+	// Override if Cerulean Symphony is loaded, to combine the menus together.
+	static var csOverride:Bool = false;
 
 	static var savedOptions = {
 		enabled: true,
 		middleStick: true,
 		watermark: false,
-		baseGame: true
+		stickerPack: -1
 	};
+
+	var stickerSets:Array<String> = ["DEFAULT"];
+	var setData:Array<Dynamic>;
 
 	function onStateChangeBegin(event)
 	{
@@ -94,20 +56,23 @@ class StickersPlus extends Module
 
 	function bindData():Void
 	{
+		stickerSets = ["DEFAULT"];
+    	fetchStickerSetList();
+
 		Save.instance.modOptions.set("StickersPlus", savedOptions);
 		Save.instance.flush();
 	}
 
 	function new() {
-		super('StickersPlus', 11037); // loads last, to be able to pick up more sticker packs.
+		super('StickersPlus', 11037); // funny
 	}
 
 	function initialize()
 	{
 		stickerData = [];
-		var fullText:String = Assets.getText(Paths.txt('stickersPlusData'));
+		var fullText:String = Assets.getText(Paths.txt('stickersPlus/stickersExceptions'));
 
-		var firstArray:Array<String> = fullText.split('\n').filter(function(s:String) return s != '');
+		var firstArray:Array<String> = fullText.split('\n').filter(function(s:String) return s != '' && !StringTools.startsWith(s, "//"));
 		for (i in firstArray)
     	{
       		stickerData.push([i.split(':')[0], i.split(':')[1]]);
@@ -149,9 +114,22 @@ class StickersPlus extends Module
 
 	function replaceStickers(stickerGroup:FlxTypedGroup):Void
 	{
+		stickerSets = ["DEFAULT"];
+    	fetchStickerSetList();
+
 		var assetsInList = Assets.list();
 		var stickerFilter = function(a:String) {
     		return (StringTools.startsWith(a, 'assets/shared/images/transitionSwag/') && StringTools.endsWith(a, '.png'));
+    	};
+
+    	var filterList = [];
+
+    	var extraFilter = function(a:String) {
+    		for (i in 0...filterList.length)
+    		{
+    			if (StringTools.contains(a, filterList[i])) return true;
+    		}
+    		return false;
     	};
 
     	var stickerList = assetsInList.filter(stickerFilter);
@@ -159,26 +137,47 @@ class StickersPlus extends Module
     	{
     		stickerList[i] = StringTools.replace(stickerList[i], "assets/shared/images/", "");
     		stickerList[i] = stickerList[i].split(".")[0];
-    		if (StringTools.contains(stickerList[i], 'stickersPlusLogo') && savedOptions.watermark == false) stickerList.remove(stickerList[i]);
+    		if (StringTools.contains(stickerList[i], 'stickersPlusLogo'))
+    		{
+    			if (savedOptions.watermark == false) stickerList.remove(stickerList[i]);
+    		}
     	}
+    	if (savedOptions.watermark == true && !stickerList.contains("transitionSwag/stickersPlusLogo")) stickerList.push("transitionSwag/stickersPlusLogo");
 
     	// for some reason the first sticker in a set doesn't have it's asset key fixed, so this fixes that.
     	stickerList[0] = StringTools.replace(stickerList[0], "assets/shared/images/", "");
     	stickerList[0] = stickerList[0].split(".")[0];
 
-    	if (stickerList.length > baseGameStickers.length && savedOptions.baseGame != true)
+    	// There's always a blank entry after the full sticker list. Get rid of it.
+    	stickerList.pop();
+
+    	switch(savedOptions.stickerPack + 1)
     	{
-    		for (i in 0...baseGameStickers.length)
-    		{
-    			for (j in 0...stickerList.length)
-    			{
-    				if (StringTools.contains(stickerList[j], baseGameStickers[i])) stickerList.remove(stickerList[j]);
-    			}
-    		}
+    		case 0:
+    			// Do nothing! LMAO!
+    			trace("[STICKERS PLUS] DEFAULT!");
+    		case (stickerSets.length - 1): // SOLO RANDOM
+    			trace("[STICKERS PLUS] SOLO RANDOM!");
+    			filterList = [stickerList[FlxG.random.int(0, stickerList.length - 1)]];
+    		case (stickerSets.length - 2): // RANDOM
+    			trace("[STICKERS PLUS] RANDOM!");
+    			filterList = setData[FlxG.random.int(0, setData.length - 1)].stickerPaths;
+    		case (stickerSets.length - 3): // ALL
+    			trace("[STICKERS PLUS] ALL!");
+    			
+    		default:
+    			filterList = setData[savedOptions.stickerPack].stickerPaths;
     	}
+
+    	if (savedOptions.watermark && savedOptions.stickerPack != stickerSets.length - 2) filterList.push("transitionSwag/stickersPlusLogo");
+
+    	trace("[STICKERS PLUS] FILTER LIST: " + filterList);
+
+    	if (filterList.length > 0) stickerList = stickerList.filter(extraFilter);
 
     	trace("[STICKERS PLUS] Sticker list: " + stickerList);
 
+    	if (savedOptions.stickerPack == -1) return;
     	for (sticker in stickerGroup.members)
     	{
     		sticker.loadGraphic(Paths.image(stickerList[FlxG.random.int(0, stickerList.length - 1)]));
@@ -206,6 +205,7 @@ class StickersPlus extends Module
 		super.onStateChangeEnd(event);
 		if (!Std.isOfType(event.targetState, OptionsState))
 			return;
+		if (csOverride) return;
 		var state = event.targetState.optionsCodex;
 		var preferences = event.targetState.optionsCodex.pages['preferences'];
 		var options = event.targetState.optionsCodex.pages.get('options');
@@ -234,13 +234,14 @@ class StickersPlus extends Module
 
       	stickerOptions.items.clear();
       	stickerOptions.preferenceItems.clear();
+      	stickerOptions.preferenceDesc = [];
 
-      	stickerOptions.createPrefItemCheckbox('Stickers Plus', 'Enables Stickers Plus', (value) -> {
+      	stickerOptions.createPrefItemCheckbox('Enable Stickers Plus', 'Enables Stickers Plus (duh?)\n ', (value) -> {
 			savedOptions.enabled = value;
 			bindData();
 		}, savedOptions.enabled);
 
-		stickerOptions.createPrefItemCheckbox('Highlight Opponent', 'When enabled, forces the middle sticker to be the opponent (when applicable).', (value) -> {
+		stickerOptions.createPrefItemCheckbox('Highlight Opponent', 'When enabled, forces the middle sticker to be the opponent. (Note: Does not work if the sticker set is DEFAULT.)', (value) -> {
 			savedOptions.middleStick = value;
 			bindData();
 		}, savedOptions.middleStick);
@@ -250,10 +251,31 @@ class StickersPlus extends Module
 			bindData();
 		}, savedOptions.watermark);
 
-		stickerOptions.createPrefItemCheckbox('Base Game Stickers', 'Turns off the base game stickers.', (value) -> {
+		/*stickerOptions.createPrefItemCheckbox('Base Game Stickers', 'Turns off the base game stickers.', (value) -> {
 			savedOptions.baseGame = value;
 			bindData();
-		}, savedOptions.baseGame);
+		}, savedOptions.baseGame);*/
+		stickerOptions.createPrefItemNumber("Sticker Set", "Forces a certain sticker set to be used. Set this to DEFAULT to use the song's designated sticker set. (WIP)", (value) -> {
+			fixItemNames(stickerOptions, value);
+			FunkinSound.playOnce(Paths.sound('scrollMenu'), 0.4);
+			savedOptions.stickerPack = value;
+			bindData();
+		}, (value) -> "", savedOptions.stickerPack, -1, stickerSets.length - 2, 1);
+
+		fixItemNames(stickerOptions, savedOptions.stickerPack);
+
+		stickerOptions.createPrefDescription();
+	}
+
+	function fixItemNames(options, num)
+	{
+		for (item in options.items.members)
+		{
+			if (Std.isOfType(item, NumberPreferenceItem))
+			{
+				item.label.text = "Sticker Set: " + stickerSets[Math.floor(num + 1)];
+			}
+		}
 	}
 
 	function recenterItems(options)
@@ -265,5 +287,20 @@ class StickersPlus extends Module
 		{
 			options.items.members[i].y = offset + 100 * i;
 		}
+	}
+
+	function fetchStickerSetList()
+	{
+		var path = Paths.json("stickersPlus/stickerSetData");
+		var json = Json.parse(Assets.getText(path));
+		setData = json.packs;
+		for (i in 0...setData.length)
+		{
+			stickerSets.push(setData[i].name);
+		}
+
+		stickerSets.push("ALL");
+		stickerSets.push("RANDOM");
+		stickerSets.push("SOLO RANDOM");
 	}
 }

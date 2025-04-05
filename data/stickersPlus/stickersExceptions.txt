@@ -1,0 +1,11 @@
+// EXCEPTION DATA FOR STICKERS PLUS
+// FORMAT: [Character File Name]:[Sticker Name Prefix]
+// Example: bf-pixel:bf = If BF Pixel is your opponent, the center sticker will try to be a sticker with "bf" in it's filename. (If the option is enabled!)
+// To add to this list, add Stickers+ as an (optional) dependency, and create a file in your mod with the directory "_append/data/stickersExceptions.txt" and only write new additions.
+spooky-dark:spooky
+mom-car:mom
+parents-christmas:dad
+monster-christmas:monster
+senpai-angry:senpai
+tankman-bloody:tankman
+darnell-blazin:darnell
